@@ -29,6 +29,7 @@ if __name__ == "__main__":
     robot.controller = openravepy.RaveCreateController(robot.GetEnv(), 'IdealController')
      
     # add a table and move the robot into place
+   
     table = env.ReadKinBodyXMLFile('models/objects/table.kinbody.xml')
     env.Add(table)
     
@@ -37,14 +38,18 @@ if __name__ == "__main__":
                               [ 0, 1,  0, 0], 
                               [ 0, 0,  0, 1]])
     table.SetTransform(table_pose)
-
+    
     resolution = [0.1, 0.1, numpy.pi/4.]
     herb_base = SimpleRobot(env, robot)
     base_env = SimpleEnvironment(herb_base, resolution)
 
     raw_input('Move robot to start config and press enter')
-    sid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
-    start_config = base_env.discrete_env.NodeIdToConfiguration(sid)
+    
+    start_config = [0 ,0 ,0]
+    goal_config = [2 ,2 ,numpy.pi/4]
+
+    #sid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
+    #start_config = base_env.discrete_env.NodeIdToConfiguration(sid)
     herb_base.SetCurrentConfiguration(start_config)
 
     tstart = robot.GetTransform()
@@ -53,17 +58,25 @@ if __name__ == "__main__":
     
 
     raw_input('Move robot to goal config and press enter')
-    gid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
-    goal_config = base_env.discrete_env.NodeIdToConfiguration(gid)
+    #gid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
+    #goal_config = base_env.discrete_env.NodeIdToConfiguration(gid)
+    
+
+   
+
+
     herb_base.SetCurrentConfiguration(goal_config)
 
     tgoal = robot.GetTransform()
+    print tgoal
     hgoal = openravepy.misc.DrawAxes(env, tgoal)
     hgoal.SetShow(True)
 
     herb_base.SetCurrentConfiguration(start_config)
 
     planner = AStarPlanner(base_env, visualize=False)
+    
+
     plan = planner.Plan(start_config, goal_config)
     traj = herb_base.ConvertPlanToTrajectory(plan)
 

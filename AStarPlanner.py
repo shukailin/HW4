@@ -27,6 +27,8 @@ class AStarPlanner(object):
         open_set   = set()
         open_set.add(start_node_id)
         node_map = dict()
+        action_map = dict()
+
 
         current = start_node_id
         g_cost = {start_node_id:0}
@@ -36,7 +38,7 @@ class AStarPlanner(object):
         
         while len(open_set) != 0:
             min_node   = 0
-            min_f_cost = float(1000)
+            min_f_cost = float(100000000000)
             #assigning lowest f_cost value to the current node
             for node in open_set: 
                 if f_cost[node] < min_f_cost:
@@ -55,13 +57,16 @@ class AStarPlanner(object):
                 print "Solution found"
                 n = current
                 while(n != start_node_id):
-                    plan.insert(0, self.planning_env.discrete_env.NodeIdToConfiguration(n))
+                    #print n
+                    #plan.insert(0, self.planning_env.discrete_env.NodeIdToConfiguration(n))
+                    plan.insert(0, action_map[n])
                     #print str(n) + ", " + str(self.planning_env.discrete_env.NodeIdToGridCoord(n))
                     #raw_input()
                     n = node_map[n]
                 self.node_count = len(closed_set)
                 #print "debug plan"
                 print "Number of visitied nodes: " + str(total_num)
+                #print plan
                 return plan
                 break
 
@@ -69,7 +74,8 @@ class AStarPlanner(object):
             
             #print "debug 2"
             #find the nearest neighbors
-            for neighbor in self.planning_env.GetSuccessors(current):
+            for neighbor, action in self.planning_env.GetSuccessors(current).items():
+                #print "neighbor = " + str(neighbor) + " action = " + str(action)
                 #print "neighbor: " + str(neighbor) + " coords: " + str(self.planning_env.discrete_env.NodeIdToGridCoord(neighbor)) +  " (F, G, H) " + str(f_cost[neighbor]) + " , " + str(g_cost[neighbor])+ " , " + str(h_cost[neighbor])
                 if(neighbor in closed_set or neighbor in open_set):
                     continue
@@ -84,7 +90,7 @@ class AStarPlanner(object):
                     h_cost[neighbor] = self.planning_env.ComputeHeuristicCost(neighbor,goal_node_id)
                     f_cost[neighbor] = g_cost[neighbor] + h_cost[neighbor]
                     node_map[neighbor] = current
-                   
+                    action_map[neighbor] = action
             
             #raw_input()
             #temp_g_cost = g_cost[current] + self.planning_env.ComputeDistance(current,neighbor

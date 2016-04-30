@@ -34,7 +34,7 @@ class DiscreteEnvironment(object):
         
     def ConfigurationToGridCoord(self, config):
         """This function maps a configuration in the full configuration space to a grid coordinate in discrete space"""
-        coord = [0] * self.dimension
+        coord = [0] * (self.dimension)
         for i in xrange(self.dimension):
             coord[i] = numpy.floor((config[i]-self.lower_limits[i])/self.resolution[i])
         return coord
@@ -75,7 +75,7 @@ class DiscreteEnvironment(object):
 
     def Test(self):
         print "test1====================================="
-        config = [5.0, 5.0]
+        config = [5.0, 5.0, 0.0]
         print "config = " + str(config)
         coord = self.ConfigurationToGridCoord(config)
         print "coord = " + str(coord)
@@ -88,7 +88,7 @@ class DiscreteEnvironment(object):
 
 
         print "test2====================================="
-        config = [-5.0, -5.0]
+        config = [-5.0, -5.0, 0.0]
         print "config = " + str(config)
         coord = self.ConfigurationToGridCoord(config)
         print "coord = " + str(coord)
@@ -100,7 +100,7 @@ class DiscreteEnvironment(object):
         print "config = " + str(config)
 
         print "test3====================================="
-        config = [0.26, 0.64]
+        config = [0.26, 0.64, 0.0]
         print "config = " + str(config)
         coord = self.ConfigurationToGridCoord(config)
         print "coord = " + str(coord)
@@ -112,7 +112,7 @@ class DiscreteEnvironment(object):
         print "config = " + str(config)
 
         print "test4====================================="
-        config = [-0.26, -0.64]
+        config = [-0.26, -0.64, 0.0]
         print "config = " + str(config)
         coord = self.ConfigurationToGridCoord(config)
         print "coord = " + str(coord)
@@ -124,7 +124,7 @@ class DiscreteEnvironment(object):
         print "config = " + str(config)
 
         print "test5====================================="
-        config = [0.0, 0.0]
+        config = [0.0, 0.0, 0.0]
         print "config = " + str(config)
         coord = self.ConfigurationToGridCoord(config)
         print "coord = " + str(coord)

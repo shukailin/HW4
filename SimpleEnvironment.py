@@ -19,8 +19,8 @@ class SimpleEnvironment(object):
         self.herb = herb
         self.robot = herb.robot
         self.boundary_limits = [[-5., -5., -numpy.pi], [5., 5., numpy.pi]]
-        lower_limits, upper_limits = self.boundary_limits
-        self.discrete_env = DiscreteEnvironment(resolution, lower_limits, upper_limits)
+        self.lower_limits, self.upper_limits = self.boundary_limits
+        self.discrete_env = DiscreteEnvironment(resolution, self.lower_limits, self.upper_limits)
 
         self.resolution = resolution
         self.ConstructActions()
@@ -94,10 +94,9 @@ class SimpleEnvironment(object):
         grid_coordinate = self.discrete_env.ConfigurationToGridCoord(wc)
 
         # Set control list
-        omega_list_l = numpy.arange(0,1.5,0.5) #0 0.5 1.0
-        omega_list_r = numpy.arange(0,1.5,0.5) #0 0.5 1.0
-        duration_list = numpy.arange(2,3,1) #2
-        rotate_diretion = [-1, 1]
+        omega_list_l = numpy.arange(-1,1.5,0.25) #0 0.5 1.0
+        omega_list_r = numpy.arange(-1,1.5,0.25) #0 0.5 1.0
+        duration_list = numpy.arange(0,0.5,0.01) #2
         
         """
         for omega_l in omega_list:
@@ -109,8 +108,7 @@ class SimpleEnvironment(object):
         for omega_l in omega_list_l:
             for omega_r in omega_list_r:
                 for dt in duration_list:
-                    for direction in rotate_diretion:
-                        self.controlList.append(Control(omega_l*direction,omega_r*direction,dt))
+                    self.controlList.append(Control(omega_l,omega_r,dt))
 
 
         # Iterate through each possible starting orientation
@@ -133,47 +131,66 @@ class SimpleEnvironment(object):
 
     def GetSuccessors(self, node_id):
 
-        successors = []
+        self.successors = {}
 
         # TODO: Here you will implement a function that looks
         #  up the configuration associated with the particular node_id
         #  and return a list of node_ids and controls that represent the neighboring
         #  nodes
-        coord = self.discrete_env.NodeIdToGridCoord(node_id)
-        if not self.BoundaryCheck(coord) or self.CollisionCheck(coord):
-            return successors
+        curr_coord = self.discrete_env.NodeIdToGridCoord(node_id)
+        curr_config = self.discrete_env.NodeIdToConfiguration(node_id)
+        if not self.BoundaryCheck(curr_config) or self.CollisionCheck(curr_config):
+            return self.successors
+        #need to modify
+        omega_index = numpy.round(((curr_config[2] - -numpy.pi)/(2*numpy.pi))*self.discrete_env.num_cells[2])
+        if omega_index == self.discrete_env.num_cells[2]:
+            omega_index = omega_index - 1
+        curr_config[2] = (self.discrete_env.resolution[2] * omega_index) - numpy.pi
+        #print "node_id = " + str(node_id)
+        print "curr_config = " + str(curr_config)
+        print "omega_index = " + str(omega_index)
+        for action in self.actions[omega_index]:
+            test_config = curr_config + action.footprint[-1] #test final point
+            if not self.CollisionCheck(test_config) and self.BoundaryCheck(test_config):
+                index = self.discrete_env.ConfigurationToNodeId(test_config)
+                #print "index = " + str(index)
+                self.successors[index] = action
 
-        successors = self.NeighborCheck(coord)
+        return self.successors
 
-        return successors
+    def CollisionCheck(self,config):
+        #config = self.discrete_env.GridCoordToConfiguration(coord)
 
-    def BoundaryCheck(self, coord):
-        config = self.discrete_env.GridCoordToConfiguration(coord)
-        if config[0] < self.lower_limits[0] or config[1] < self.lower_limits[0]:
+        current_pose = self.robot.GetTransform()
+        checking_pose = current_pose.copy()
+        env = self.robot.GetEnv()
+
+        checking_pose[0:3,3] = numpy.array([config[0], config[1], 0.0])
+        angle = config[2]
+        rotation = numpy.array([[numpy.cos(angle), -numpy.sin(angle),0.0],[numpy.sin(angle),numpy.cos(angle),0.0],[0.0,0.0,1.0]])
+        checking_pose[0:3,0:3] = rotation
+
+        with env:
+            self.robot.SetTransform(checking_pose)
+        isCollision =  env.CheckCollision(self.robot)
+        with env:
+            self.robot.SetTransform(current_pose)
+        return isCollision
+
+    def BoundaryCheck(self, config):
+        #config = self.discrete_env.GridCoordToConfiguration(coord)
+        if config[0] < self.lower_limits[0] or config[1] < self.lower_limits[1] or config[2] < self.lower_limits[2]:
             return False
-        if config[0] > self.upper_limits[0] or config[1] > self.upper_limits[1]:
+        if config[0] > self.upper_limits[0] or config[1] > self.upper_limits[1] or config[2] > self.upper_limits[2]:
             return False
         return True
-
-    def NeighborCheck(self, coord):
-        neighbors = []
-        neighbors.append([coord[0]-1, coord[1]])
-        neighbors.append([coord[0]+1, coord[1]])
-        neighbors.append([coord[0], coord[1]-1])
-        neighbors.append([coord[0], coord[1]+1])
-
-        successors = []
-
-        for i in xrange(len(neighbors)):
-            if not self.CollisionCheck(neighbors[i]) and self.BoundaryCheck(neighbors[i]):
-                successors.append(self.discrete_env.GridCoordToNodeId(neighbors[i]))
-        return successors 
-
 
 
     def ComputeDistance(self, start_id, end_id):
 
         dist = 0
+        start_config = self.discrete_env.NodeIdToConfiguration(start_id)        
+        end_config = self.discrete_env.NodeIdToConfiguration(end_id)
 
         # TODO: Here you will implement a function that 
         # computes the distance between the configurations given
@@ -188,7 +205,18 @@ class SimpleEnvironment(object):
         # TODO: Here you will implement a function that 
         # computes the heuristic cost between the configurations
         # given by the two node ids
-        cost = self.ComputeDistance(start_id, goal_id)
         
+        start_config = self.discrete_env.NodeIdToConfiguration(start_id)        
+        end_config = self.discrete_env.NodeIdToConfiguration(goal_id)
+        dist = numpy.linalg.norm(start_config[0:2]-end_config[0:2]) 
+        orientation = numpy.linalg.norm(start_config[-1]-end_config[-1]) 
+        print "========================================="
+        print "start_config = " + str(start_config)
+        print "end_config = " + str(end_config)
+        print "dist cost = " + str(dist)
+        print "orientation cost = " + str(orientation)
+        cost = dist + orientation
+        
+        #cost = self.ComputeDistance(start_id,goal_id)
         return cost
 
