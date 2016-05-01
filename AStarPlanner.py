@@ -33,12 +33,12 @@ class AStarPlanner(object):
         current = start_node_id
         g_cost = {start_node_id:0}
         h_cost = {start_node_id: self.planning_env.ComputeHeuristicCost(start_node_id,goal_node_id)}
-        f_cost = {start_node_id:g_cost[start_node_id]+h_cost[start_node_id]}
+        f_cost = {start_node_id: 2*g_cost[start_node_id]+h_cost[start_node_id]}
         total_num = 0
         
         while len(open_set) != 0:
             min_node   = 0
-            min_f_cost = float(100000000000)
+            min_f_cost = float(1000)
             #assigning lowest f_cost value to the current node
             for node in open_set: 
                 if f_cost[node] < min_f_cost:
@@ -48,7 +48,7 @@ class AStarPlanner(object):
             #print "current jvs: " + str(self.planning_env.discrete_env.NodeIdToConfiguration(current))
             
             current = min_node
-            
+            print "current node = " + str(current) + "   goal node = " + str(goal_node_id)
             open_set.remove(current)
             closed_set.add(current)
             #print "debug 1"

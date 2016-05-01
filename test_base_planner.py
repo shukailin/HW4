@@ -45,8 +45,8 @@ if __name__ == "__main__":
 
     raw_input('Move robot to start config and press enter')
     
-    start_config = [0 ,0 ,0]
-    goal_config = [2 ,2 ,numpy.pi/4]
+    start_config = [-0.5 ,0 ,0]
+    goal_config = [-0.5 ,2 ,0]
 
     #sid = base_env.discrete_env.ConfigurationToNodeId(herb_base.GetCurrentConfiguration())
     #start_config = base_env.discrete_env.NodeIdToConfiguration(sid)

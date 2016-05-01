@@ -94,9 +94,9 @@ class SimpleEnvironment(object):
         grid_coordinate = self.discrete_env.ConfigurationToGridCoord(wc)
 
         # Set control list
-        omega_list_l = numpy.arange(-1,1.5,0.25) #0 0.5 1.0
-        omega_list_r = numpy.arange(-1,1.5,0.25) #0 0.5 1.0
-        duration_list = numpy.arange(0,0.5,0.01) #2
+        omega_list_l = numpy.arange(-1,1.5,1.0) #0 0.5 1.0
+        omega_list_r = numpy.arange(-1,1.5,1.0) #0 0.5 1.0
+        duration_list = numpy.arange(0,3.0,0.1) #2
         
         """
         for omega_l in omega_list:
@@ -109,7 +109,7 @@ class SimpleEnvironment(object):
             for omega_r in omega_list_r:
                 for dt in duration_list:
                     self.controlList.append(Control(omega_l,omega_r,dt))
-
+        #self.controlList.append(Control(1.0,1.0,0.5))
 
         # Iterate through each possible starting orientation
         for idx in range(int(self.discrete_env.num_cells[2])):
@@ -142,18 +142,22 @@ class SimpleEnvironment(object):
         if not self.BoundaryCheck(curr_config) or self.CollisionCheck(curr_config):
             return self.successors
         #need to modify
-        omega_index = numpy.round(((curr_config[2] - -numpy.pi)/(2*numpy.pi))*self.discrete_env.num_cells[2])
-        if omega_index == self.discrete_env.num_cells[2]:
-            omega_index = omega_index - 1
-        curr_config[2] = (self.discrete_env.resolution[2] * omega_index) - numpy.pi
+        #omega_index = numpy.floor(((curr_config[2] - -numpy.pi)/(2*numpy.pi))*self.discrete_env.num_cells[2])
+        #if omega_index == self.discrete_env.num_cells[2]:
+        #    omega_index = 0
+        #curr_config[2] = (self.discrete_env.resolution[2] * omega_index) - numpy.pi
         #print "node_id = " + str(node_id)
         print "curr_config = " + str(curr_config)
-        print "omega_index = " + str(omega_index)
-        for action in self.actions[omega_index]:
-            test_config = curr_config + action.footprint[-1] #test final point
+        print "curr_coord = " + str(curr_coord[2])
+        test_config = [0,0,0]
+        for action in self.actions[curr_coord[2]]:
+            test_config[0] = curr_config[0] + action.footprint[-1][0] #test final point
+            test_config[1] = curr_config[1] + action.footprint[-1][1]
+            test_config[2] = action.footprint[-1][2]
+            print "test_config = " + str(test_config)
             if not self.CollisionCheck(test_config) and self.BoundaryCheck(test_config):
                 index = self.discrete_env.ConfigurationToNodeId(test_config)
-                #print "index = " + str(index)
+                print "index = " + str(index)
                 self.successors[index] = action
 
         return self.successors
@@ -211,11 +215,11 @@ class SimpleEnvironment(object):
         dist = numpy.linalg.norm(start_config[0:2]-end_config[0:2]) 
         orientation = numpy.linalg.norm(start_config[-1]-end_config[-1]) 
         print "========================================="
-        print "start_config = " + str(start_config)
-        print "end_config = " + str(end_config)
+        #print "start_config = " + str(start_config)
+        #print "end_config = " + str(end_config)
         print "dist cost = " + str(dist)
         print "orientation cost = " + str(orientation)
-        cost = dist + orientation
+        cost = 100*dist + orientation
         
         #cost = self.ComputeDistance(start_id,goal_id)
         return cost
