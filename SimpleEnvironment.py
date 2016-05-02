@@ -58,6 +58,7 @@ class SimpleEnvironment(object):
             timecount += stepsize
             
         # Add one more config that snaps the last point in the footprint to the center of the cell
+        
         nid = self.discrete_env.ConfigurationToNodeId(config)
         snapped_config = self.discrete_env.NodeIdToConfiguration(nid)
         snapped_config[:2] -= start_config[:2]
@@ -94,9 +95,9 @@ class SimpleEnvironment(object):
         grid_coordinate = self.discrete_env.ConfigurationToGridCoord(wc)
 
         # Set control list
-        omega_list_l = numpy.arange(-1,1.5,1.0) #0 0.5 1.0
-        omega_list_r = numpy.arange(-1,1.5,1.0) #0 0.5 1.0
-        duration_list = numpy.arange(0,3.0,0.1) #2
+        omega_list_l = numpy.arange(-1,1.5,0.5) #0 0.5 1.0
+        omega_list_r = numpy.arange(-1,1.5,0.5) #0 0.5 1.0
+        duration_list = numpy.arange(0,3.1,0.1) #2
         
         """
         for omega_l in omega_list:
@@ -143,10 +144,11 @@ class SimpleEnvironment(object):
             return self.successors
         #need to modify
         #omega_index = numpy.floor(((curr_config[2] - -numpy.pi)/(2*numpy.pi))*self.discrete_env.num_cells[2])
-        #if omega_index == self.discrete_env.num_cells[2]:
-        #    omega_index = 0
-        #curr_config[2] = (self.discrete_env.resolution[2] * omega_index) - numpy.pi
-        #print "node_id = " + str(node_id)
+        omega_index = 0
+        if omega_index == self.discrete_env.num_cells[2]:
+            omega_index = 0
+        curr_config[2] = (self.discrete_env.resolution[2] * omega_index) - numpy.pi
+        print "node_id = " + str(node_id)
         print "curr_config = " + str(curr_config)
         print "curr_coord = " + str(curr_coord[2])
         test_config = [0,0,0]
@@ -199,7 +201,9 @@ class SimpleEnvironment(object):
         # TODO: Here you will implement a function that 
         # computes the distance between the configurations given
         # by the two node ids
-        dist = numpy.linalg.norm(start_config-end_config) 
+        dist_xy = numpy.linalg.norm(start_config[0:2]-end_config[0:2]) 
+        dist_w = numpy.linalg.norm(start_config[2]-end_config[2]) 
+        dist = dist_xy + 2*dist_w
         return dist
 
     def ComputeHeuristicCost(self, start_id, goal_id):
@@ -219,7 +223,7 @@ class SimpleEnvironment(object):
         #print "end_config = " + str(end_config)
         print "dist cost = " + str(dist)
         print "orientation cost = " + str(orientation)
-        cost = 100*dist + orientation
+        cost = 10*dist + orientation
         
         #cost = self.ComputeDistance(start_id,goal_id)
         return cost
